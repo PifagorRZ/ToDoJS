@@ -1,0 +1,63 @@
+body {
+    display: grid;
+    grid-template-columns: 1fr 9fr;
+}
+
+form {
+    display: grid;
+    grid-template-columns: 5fr 1fr;
+    margin: 10px;
+    padding: 10px;
+}
+
+#taskText {
+    font-size: 50px;
+    
+}
+
+#tasks {
+    padding: 10px;
+}
+
+.task {
+    display: grid;
+    grid-template-columns: 9fr 1fr 1fr;
+    margin: 10px;
+    padding: 10px;
+    font-size: 20px;
+    align-content: center;
+    background-color: aquamarine;
+}
+
+.task[complete=true] {
+    background-color: blueviolet;
+}
+
+
+li {
+    list-style: none;
+}
+
+.nav-element {
+    display: grid;
+    grid-template-columns: 8fr 2fr;
+    background-color: brown;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.active {
+    background-color: darkgreen;
+}
+
+
+#newList {
+    width: 80%;
+}
+
+.complete-check {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
