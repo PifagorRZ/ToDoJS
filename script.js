@@ -22,6 +22,63 @@ if (!localStorage[currentlist]) {
     localStorage[currentlist] = JSON.stringify([]);
 }
 
+
+class TaskService {
+    addTask(task) {
+        let tasks = JSON.parse(localStorage[currentlist]);
+        tasks[tasks.length] = task;
+        localStorage[currentlist] = JSON.stringify(tasks);
+    }
+    
+    deleteTask(taskNode) {
+        let tasks = JSON.parse(localStorage[currentlist]);
+        let index = this.findTask(tasks, taskNode.getAttribute('text'));
+        
+        tasks.splice(index, 1);
+        localStorage[currentlist] = JSON.stringify(tasks);
+    }
+    findTask(tasks, taskText) {
+        for (let i = 0; i < tasks.length; i++) {
+            if (tasks[i].text == taskText) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    getTasksList() {
+        return  JSON.parse(localStorage[currentlist]);
+    }
+
+    completeTask(taskNode) {
+        let tasks = JSON.parse(localStorage[currentlist]);
+        let index = this.findTask(tasks, taskNode.getAttribute('text'));
+        tasks[index].complete = !tasks[index].complete;
+
+        localStorage[currentlist] = JSON.stringify(tasks);
+    }
+
+    changeTask(taskNode, newText) {
+        let tasks = JSON.parse(localStorage[currentlist]);
+        let index = this.findTask(tasks, taskNode.getAttribute('text'));
+        
+        tasks[index].text = newText;
+
+        localStorage[currentlist] = JSON.stringify(tasks);
+    }
+
+    getListsKeys() {
+        let lists = [];
+        for ( var i = 0, len = localStorage.length; i < len; ++i ) {
+            lists.push(localStorage.key( i ));
+        }
+        return lists;
+    }
+}
+
+
+const taskService = new TaskService();
+
 renderTaskLists();
 renderList();
 
@@ -31,23 +88,19 @@ taskForm.addEventListener('submit', (e) => {
     taskForm.taskText.value = '';
 })
 
+
 function addTask(task) {
     let newTask = {text: task, complete: false};
-    let tasks = JSON.parse(localStorage[currentlist]);
-    tasks[tasks.length] = newTask;
-    localStorage[currentlist] = JSON.stringify(tasks);
-    
+    taskService.addTask(newTask);
     tasksUl.appendChild(createTaskLi(newTask));
 }
 
 function renderList(listName) {
-    let tasks;
     try {
-        tasks = listName ? JSON.parse(localStorage[listName.target.getAttribute('text')]) : JSON.parse(localStorage[currentlist]);
-        currentlist = listName.target.getAttribute('text');
-    } catch {
-        tasks = JSON.parse(localStorage[currentlist] || localStorage['mainList']);
-    }
+        currentlist = listName.target.getAttribute('text')
+    } catch {}
+    
+    let tasks = taskService.getTasksList();
     let list = document.createElement('ul');
     list.id = 'tasks'
 
@@ -95,64 +148,39 @@ function deleteTask(event) {
     event.stopPropagation();
     event = event.target.parentNode;
     tasksUl.removeChild(event);
-    let tasks = JSON.parse(localStorage[currentlist]);
-    for (let i = 0; i < tasks.length; i++) {
-        if (tasks[i].text == event.getAttribute('text')) {
-            tasks.splice(i, 1);
-            break;
-        }
-    }
-
-    localStorage[currentlist] = JSON.stringify(tasks);
-    
+    taskService.deleteTask(event);
 }
 
 function completeTask(event) {
-    
     event.stopPropagation();
     event = event.target.parentNode;
     event.setAttribute('complete', !event.getAttribute('complete'));
-    let tasks = JSON.parse(localStorage[currentlist]);
-    for (let i = 0; i < tasks.length; i++) {
-        if (tasks[i].text == event.getAttribute('text')) {
-            tasks[i].complete = !tasks[i].complete;
-            break;
-        }
-    }
+    taskService.completeTask(event);
 
-    localStorage[currentlist] = JSON.stringify(tasks);
-    renderList()
+    renderList();
 }
 
 function changeTask(event) {
-    if (event.target.getAttribute != 'li') {return;}
-    
+    if (event.target.tagName != 'LI') {return;}
     let newText = prompt('Write new text', event.target.getAttribute('text'));
 
     if (!newText) {return};
-
-    let tasks = JSON.parse(localStorage[currentlist]);
-    for (let i = 0; i < tasks.length; i++) {
-        if (tasks[i].text == event.target.getAttribute('text')) {
-            tasks[i].text = newText;
-            break;
-        }
-    }
-
-    localStorage[currentlist] = JSON.stringify(tasks);
+    taskService.changeTask(event.target, newText);
+    
     renderList();
 }
 
 function renderTaskLists() {
     let lists = document.createElement('ul');
     lists.id = 'leftPanel';
+    let TaskLists = taskService.getListsKeys()
 
 
-    for ( var i = 0, len = localStorage.length; i < len; ++i ) {
+    for ( var i = 0, len = TaskLists.length; i < len; ++i ) {
         let li = document.createElement('li');
         li.onclick = renderList;
-        li.setAttribute('text', localStorage.key( i ));
-        li.textContent = localStorage.key( i );
+        li.setAttribute('text', TaskLists[i]);
+        li.textContent = TaskLists[i];
         li.classList.add('nav-element')
         let deleteButton = document.createElement('button');
         deleteButton.textContent = 'DELETE';
@@ -176,5 +204,4 @@ function deleteList(event) {
     localStorage.removeItem(event.target.parentNode.getAttribute('text'));
     renderTaskLists();
 }
-
 
