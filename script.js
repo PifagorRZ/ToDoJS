@@ -16,8 +16,6 @@ let addListButton = document.createElement('button');
         renderTaskLists();
     })
 let currentlist = 'mainList';
-
-
 if (!localStorage[currentlist]) {
     localStorage[currentlist] = JSON.stringify([]);
 }
@@ -61,7 +59,6 @@ class TaskService {
     changeTask(taskNode, newText) {
         let tasks = JSON.parse(localStorage[currentlist]);
         let index = this.findTask(tasks, taskNode.getAttribute('text'));
-        
         tasks[index].text = newText;
 
         localStorage[currentlist] = JSON.stringify(tasks);
@@ -74,7 +71,12 @@ class TaskService {
         }
         return lists;
     }
+
+    deleteList(event) {
+        localStorage.removeItem(event.target.parentNode.getAttribute('text'));
+    }
 }
+
 
 
 const taskService = new TaskService();
@@ -87,7 +89,6 @@ taskForm.addEventListener('submit', (e) => {
     addTask(taskForm.taskText.value);
     taskForm.taskText.value = '';
 })
-
 
 function addTask(task) {
     let newTask = {text: task, complete: false};
@@ -201,7 +202,7 @@ function renderTaskLists() {
 }
 
 function deleteList(event) {
-    localStorage.removeItem(event.target.parentNode.getAttribute('text'));
+    taskService.deleteList(event);
     renderTaskLists();
 }
 
