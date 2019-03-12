@@ -12,7 +12,6 @@ let newList = document.createElement('input');
 let addListButton = document.createElement('button');
     addListButton.textContent = 'add';
     addListButton.addEventListener('click', async (e) => {
-        console.log(e.target.parentNode.firstChild.value);
         await taskService.addList(e.target.parentNode.firstChild.value);
         renderTaskLists();
     })
@@ -62,10 +61,6 @@ class TaskService {
         return tasks;
     }
 
-    async deleteTasksofList(list) {
-        await fetch(`http://localhost:3000/tasks?listId=${list}`, {method: "DELETE"})
-    }
-
     async completeTask(taskNode) {
         //console.log(!taskNode.getAttribute('complete'));
         await fetch(`http://localhost:3000/tasks/${taskNode.getAttribute('id')}`, {
@@ -105,7 +100,6 @@ class TaskService {
 
     async deleteList(event) {
         await fetch(`http://localhost:3000/lists/${event.target.parentNode.getAttribute('text')}`, {method: "DELETE"});
-        await this.deleteTasksofList(event.target.parentNode.getAttribute('text'));
     }
 }
 
@@ -129,7 +123,9 @@ async function renderList(listName) {
     try {
         currentlist = listName.target.getAttribute('text')
     } catch {}
-    
+    if (currentlist == null) {
+        currentlist = 'mainList';
+    }
     let tasks = await taskService.getTasksList();
     let list = document.createElement('ul');
     list.id = 'tasks'
