@@ -1,15 +1,8 @@
 {
   "lists": [
     {
-      "id": "mainList"
+      "id": "fvgfg"
     }
   ],
-  "tasks": [
-    {
-      "complete": "false",
-      "listId": "mainList",
-      "text": "createServer",
-      "id": 1
-    }
-  ]
+  "tasks": []
 }

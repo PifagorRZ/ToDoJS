@@ -63,11 +63,7 @@ class TaskService {
     }
 
     async deleteTasksofList(list) {
-        let tasks = await fetch(`http://localhost:3000/tasks?listId=${list}`);
-        tasks = await tasks.json();
-        for (let task in tasks) {
-            await this.deleteTask(task.id);
-        }
+        await fetch(`http://localhost:3000/tasks?listId=${list}`, {method: "DELETE"})
     }
 
     async completeTask(taskNode) {
