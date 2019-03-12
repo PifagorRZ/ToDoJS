@@ -11,8 +11,9 @@ let newList = document.createElement('input');
     newList.type = 'text';
 let addListButton = document.createElement('button');
     addListButton.textContent = 'add';
-    addListButton.addEventListener('click', (e) => {
-        localStorage[e.target.parentNode.firstChild.value] = JSON.stringify([]);
+    addListButton.addEventListener('click', async (e) => {
+        console.log(e.target.parentNode.firstChild.value);
+        await taskService.addList(e.target.parentNode.firstChild.value);
         renderTaskLists();
     })
 let currentlist = 'mainList';
@@ -22,67 +23,105 @@ if (!localStorage[currentlist]) {
 
 
 class TaskService {
-    addTask(task) {
-        let tasks = JSON.parse(localStorage[currentlist]);
-        tasks[tasks.length] = task;
-        localStorage[currentlist] = JSON.stringify(tasks);
+    async addTask(task) {
+        try {
+        let res = await fetch('http://localhost:3000/tasks', {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+            body: JSON.stringify({
+                listId: currentlist,
+                id: task.id,
+                complete: task.complete,
+                text: task.id
+            })
+        })
+        if (!res.ok) {
+            throw new Error(response.statusText);
+        }
+    } catch {
+        alert("Задание с таким id уже существует");
+    }
+    }
+
+    async addList(name) {
+        try {
+            let res = await fetch('http://localhost:3000/lists', {
+                method: "POST",
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    id: name
+                })
+            })
+            if (!res.ok) {
+                throw new Error(response.statusText);
+            }
+        } catch(err) {
+            alert("Список с таким id уже существует", err);
+        }
+        
     }
     
-    deleteTask(taskNode) {
-        let tasks = JSON.parse(localStorage[currentlist]);
-        let index = this.findTask(tasks, taskNode.getAttribute('text'));
+    async deleteTask(taskNode) {
+        await fetch(`http://localhost:3000/tasks/${taskNode.getAttribute('id')}`, {method: "DELETE"})
+    }
+
+    async getTasksList() {
+        let tasks = await fetch(`http://localhost:3000/tasks?listId=${currentlist}`);
+        tasks = await tasks.json();
+        return tasks;
+    }
+
+    async completeTask(taskNode) {
+        //console.log(!taskNode.getAttribute('complete'));
+        await fetch(`http://localhost:3000/tasks/${taskNode.getAttribute('id')}`, {
+            method: "PUT",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+            body: JSON.stringify(
+        {"complete": taskNode.getAttribute('complete'), 'listId': currentlist, 'text': taskNode.getAttribute('text')})
+        })
+    }
+
+    async changeTask(taskNode, newText) {
+        await fetch(`http://localhost:3000/tasks/${taskNode.getAttribute('id')}`, {
+            method: "PUT",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+            body: JSON.stringify(
+        {"complete": taskNode.getAttribute('complete'), "listId": currentlist, "text": newText})
+        })
+    }
+
+    async getListsKeys() {
+        let newList = [];
+        let data = await fetch('http://localhost:3000/lists')
+        data = await data.json();
         
-        tasks.splice(index, 1);
-        localStorage[currentlist] = JSON.stringify(tasks);
-    }
-    findTask(tasks, taskText) {
-        for (let i = 0; i < tasks.length; i++) {
-            if (tasks[i].text == taskText) {
-                return i;
-            }
+        for (let i = 0; i < data.length; i++) {
+            newList.push(data[i].id)
         }
-        return null;
+
+        return newList
     }
 
-    getTasksList() {
-        return  JSON.parse(localStorage[currentlist]);
-    }
-
-    completeTask(taskNode) {
-        let tasks = JSON.parse(localStorage[currentlist]);
-        let index = this.findTask(tasks, taskNode.getAttribute('text'));
-        tasks[index].complete = !tasks[index].complete;
-
-        localStorage[currentlist] = JSON.stringify(tasks);
-    }
-
-    changeTask(taskNode, newText) {
-        let tasks = JSON.parse(localStorage[currentlist]);
-        let index = this.findTask(tasks, taskNode.getAttribute('text'));
-        tasks[index].text = newText;
-
-        localStorage[currentlist] = JSON.stringify(tasks);
-    }
-
-    getListsKeys() {
-        let lists = [];
-        for ( var i = 0, len = localStorage.length; i < len; ++i ) {
-            lists.push(localStorage.key( i ));
-        }
-        return lists;
-    }
-
-    deleteList(event) {
-        localStorage.removeItem(event.target.parentNode.getAttribute('text'));
+    async deleteList(event) {
+        await fetch(`http://localhost:3000/lists/${event.target.parentNode.getAttribute('text')}`, {method: "DELETE"})
     }
 }
-
-
 
 const taskService = new TaskService();
 
 renderTaskLists();
-renderList();
 
 taskForm.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -90,18 +129,18 @@ taskForm.addEventListener('submit', (e) => {
     taskForm.taskText.value = '';
 })
 
-function addTask(task) {
-    let newTask = {text: task, complete: false};
-    taskService.addTask(newTask);
-    tasksUl.appendChild(createTaskLi(newTask));
+async function addTask(task) {
+    let newTask = {id: task, text: task, complete: false};
+    await taskService.addTask(newTask);
+    renderList();
 }
 
-function renderList(listName) {
+async function renderList(listName) {
     try {
         currentlist = listName.target.getAttribute('text')
     } catch {}
     
-    let tasks = taskService.getTasksList();
+    let tasks = await taskService.getTasksList();
     let list = document.createElement('ul');
     list.id = 'tasks'
 
@@ -126,22 +165,29 @@ function createTaskLi(task) {
     let li = document.createElement('li');
     let deleteB = document.createElement('button');
     let completeB = document.createElement('input');
+    let textSpan = document.createElement('span');
     deleteB.textContent = 'DELETE';
     deleteB.addEventListener('click', deleteTask);
     completeB.type = 'checkbox';
-    completeB.checked = task.complete;
+
+    //console.log(task.complete);
+
+    completeB.checked = task.complete == 'true';
     completeB.classList.add('complete-check');
     completeB.addEventListener('change', completeTask);
 
-    li.textContent = task.text;
+    textSpan.textContent = task.text;
     li.setAttribute('complete', task.complete) ;
-    li.setAttribute('text', task.text) ;
+    li.setAttribute('text', task.text);
+    li.setAttribute('id', task.id)
     li.style.cursor = 'pointer';
     li.classList.add('task');
     li.addEventListener('click', changeTask);
     
-    li.appendChild(deleteB);
     li.appendChild(completeB);
+    li.appendChild(textSpan);
+    li.appendChild(deleteB);
+    
     return li;
 }
 
@@ -152,57 +198,57 @@ function deleteTask(event) {
     taskService.deleteTask(event);
 }
 
-function completeTask(event) {
+async function completeTask(event) {
     event.stopPropagation();
     event = event.target.parentNode;
-    event.setAttribute('complete', !event.getAttribute('complete'));
-    taskService.completeTask(event);
+    event.setAttribute('complete', !(event.getAttribute('complete') == 'true'));
+    await taskService.completeTask(event);
 
     renderList();
 }
 
-function changeTask(event) {
-    if (event.target.tagName != 'LI') {return;}
-    let newText = prompt('Write new text', event.target.getAttribute('text'));
+async function changeTask(event) {
+    if (event.target.tagName != 'SPAN') {return;}
+    let newText = prompt('Write new text', event.target.parentNode.getAttribute('text'));
 
     if (!newText) {return};
-    taskService.changeTask(event.target, newText);
+    await taskService.changeTask(event.target.parentNode, newText);
     
     renderList();
 }
 
-function renderTaskLists() {
+ function renderTaskLists() {
     let lists = document.createElement('ul');
     lists.id = 'leftPanel';
-    let TaskLists = taskService.getListsKeys()
-
-
-    for ( var i = 0, len = TaskLists.length; i < len; ++i ) {
-        let li = document.createElement('li');
-        li.onclick = renderList;
-        li.setAttribute('text', TaskLists[i]);
-        li.textContent = TaskLists[i];
-        li.classList.add('nav-element')
-        let deleteButton = document.createElement('button');
-        deleteButton.textContent = 'DELETE';
-        deleteButton.addEventListener('click', deleteList);
-        li.appendChild(deleteButton);
-
-        lists.appendChild(li);
-    }
-
-    let lastLi = document.createElement('li');
-    lastLi.appendChild(newInput);
-    lastLi.appendChild(addListButton);
-    lastLi.classList.add('nav-element')
-    lists.appendChild(lastLi);
-
-    nav.replaceChild(lists, navLists);
-    navLists = lists;
+    taskService.getListsKeys().then((TaskLists) => {
+        for ( var i = 0, len = TaskLists.length; i < len; ++i ) {
+            let li = document.createElement('li');
+            li.onclick = renderList;
+            li.setAttribute('text', TaskLists[i]);
+            li.textContent = TaskLists[i];
+            li.classList.add('nav-element')
+            let deleteButton = document.createElement('button');
+            deleteButton.textContent = 'DELETE';
+            deleteButton.addEventListener('click', deleteList);
+            li.appendChild(deleteButton);
+    
+            lists.appendChild(li);
+        }
+    
+        let lastLi = document.createElement('li');
+        lastLi.appendChild(newInput);
+        lastLi.appendChild(addListButton);
+        lastLi.classList.add('nav-element')
+        lists.appendChild(lastLi);
+    
+        nav.replaceChild(lists, navLists);
+        navLists = lists;
+        renderList();
+    });
 }
 
-function deleteList(event) {
-    taskService.deleteList(event);
+async function deleteList(event) {
+    await taskService.deleteList(event);
     renderTaskLists();
 }
 
