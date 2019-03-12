@@ -1,8 +1,15 @@
 {
   "lists": [
     {
-      "id": "fvgfg"
+      "id": "mainList"
     }
   ],
-  "tasks": []
+  "tasks": [
+    {
+      "listId": "mainList",
+      "complete": false,
+      "text": "new task",
+      "id": 1
+    }
+  ]
 }
