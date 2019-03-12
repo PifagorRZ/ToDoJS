@@ -24,7 +24,6 @@ if (!localStorage[currentlist]) {
 
 class TaskService {
     async addTask(task) {
-        try {
         let res = await fetch('http://localhost:3000/tasks', {
             method: "POST",
             headers: {
@@ -33,48 +32,42 @@ class TaskService {
               },
             body: JSON.stringify({
                 listId: currentlist,
-                id: task.id,
                 complete: task.complete,
-                text: task.id
+                text: task.text
             })
         })
-        if (!res.ok) {
-            throw new Error(response.statusText);
-        }
-    } catch {
-        alert("Задание с таким id уже существует");
-    }
     }
 
+
     async addList(name) {
-        try {
-            let res = await fetch('http://localhost:3000/lists', {
-                method: "POST",
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    id: name
-                })
+        await fetch('http://localhost:3000/lists', {
+            method: "POST",
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: name
             })
-            if (!res.ok) {
-                throw new Error(response.statusText);
-            }
-        } catch(err) {
-            alert("Список с таким id уже существует", err);
-        }
-        
+        })
     }
     
     async deleteTask(taskNode) {
-        await fetch(`http://localhost:3000/tasks/${taskNode.getAttribute('id')}`, {method: "DELETE"})
+        await fetch(`http://localhost:3000/tasks/${taskNode}`, {method: "DELETE"})
     }
 
     async getTasksList() {
         let tasks = await fetch(`http://localhost:3000/tasks?listId=${currentlist}`);
         tasks = await tasks.json();
         return tasks;
+    }
+
+    async deleteTasksofList(list) {
+        let tasks = await fetch(`http://localhost:3000/tasks?listId=${list}`);
+        tasks = await tasks.json();
+        for (let task in tasks) {
+            await this.deleteTask(task.id);
+        }
     }
 
     async completeTask(taskNode) {
@@ -115,7 +108,8 @@ class TaskService {
     }
 
     async deleteList(event) {
-        await fetch(`http://localhost:3000/lists/${event.target.parentNode.getAttribute('text')}`, {method: "DELETE"})
+        await fetch(`http://localhost:3000/lists/${event.target.parentNode.getAttribute('text')}`, {method: "DELETE"});
+        await this.deleteTasksofList(event.target.parentNode.getAttribute('text'));
     }
 }
 
@@ -130,7 +124,7 @@ taskForm.addEventListener('submit', (e) => {
 })
 
 async function addTask(task) {
-    let newTask = {id: task, text: task, complete: false};
+    let newTask = {text: task, complete: false};
     await taskService.addTask(newTask);
     renderList();
 }
@@ -195,7 +189,7 @@ function deleteTask(event) {
     event.stopPropagation();
     event = event.target.parentNode;
     tasksUl.removeChild(event);
-    taskService.deleteTask(event);
+    taskService.deleteTask(event.getAttribute('id'));
 }
 
 async function completeTask(event) {

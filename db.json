@@ -2,53 +2,14 @@
   "lists": [
     {
       "id": "mainList"
-    },
-    {
-      "id": "new"
-    },
-    {
-      "id": "new22"
-    },
-    {
-      "id": "new222"
     }
   ],
   "tasks": [
     {
-      "complete": "true",
-      "listId": "mainList",
-      "text": "new1",
-      "id": "new"
-    },
-    {
-      "complete": "false",
-      "listId": "new22",
-      "text": "bbb2",
-      "id": "bbb"
-    },
-    {
-      "complete": "true",
-      "listId": "new",
-      "text": "dfdfff",
-      "id": "dfdf"
-    },
-    {
       "complete": "false",
       "listId": "mainList",
-      "text": "dfffff",
-      "id": "dfffff"
-    },
-    {
-      "complete": "true",
-      "listId": "mainList",
-      "text": "nnn2",
-      "id": "nnn"
-    },
-    {
-      "listId": "mainList",
-      "id": "cv",
-      "complete": false,
-      "text": "cv"
+      "text": "createServer",
+      "id": 1
     }
   ]
 }
